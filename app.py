@@ -313,10 +313,10 @@ with tab2:
         st.info("目前尚無飲水紀錄。")
 
 
-# 分頁三：今天這樣吃好嗎 (包含點擊後顯示的 Before vs After 體態對比)
+# 分頁三：今天這樣吃好嗎 (包含模擬分析、Before vs After 圖片與營養素分析建議)
 with tab3:
     st.subheader("🤖 今天這樣吃好嗎")
-    st.info("💡 選擇三餐，設定模擬天數，點擊下方按鈕即可一鍵檢視長期體態轉變！")
+    st.info("💡 選擇三餐，設定模擬天數，點擊下方按鈕即可一鍵檢視長期體態轉變與營養素分析！")
 
     st.markdown("---")
     st.markdown("#### 🍳 早餐")
@@ -361,7 +361,7 @@ with tab3:
     s2.metric(f"{sim_days} 天後估算體重", f"{simulated_weight_long:.1f} kg")
     s3.metric("估算 BMI", f"{simulated_bmi_long:.1f}")
 
-    # 點擊模擬按鈕後，顯示 Before vs After 圖片對比卡片
+    # 點擊模擬按鈕後，顯示 Before vs After 圖片對比卡片 與 營養素分析建議
     if st.button("🚀 啟動模擬分析", type="primary"):
         st.write("---")
         st.markdown(f"### 🛡️ 【{char_name}】的 {sim_days} 天體態轉變模擬")
@@ -396,3 +396,39 @@ with tab3:
                 """,
                 unsafe_allow_html=True,
             )
+
+        # 營養素分析與飲食建議區塊
+        st.markdown("---")
+        st.markdown("### 💡 營養素分析與飲食建議")
+
+        protein_target = weight * 1.5
+        advice_list = []
+
+        if simulated_daily_balance < -500:
+            advice_list.append(
+                "🔥 **熱量赤字較大**：體重下降速度會很快，但請注意蛋白質與水分是否充足，以免流失肌肉。"
+            )
+        elif -500 <= simulated_daily_balance < 0:
+            advice_list.append(
+                "✨ **健康穩健的熱量赤字**：非常棒的減脂節奏！持之以恆可以健康瘦下來。"
+            )
+        elif 0 <= simulated_daily_balance <= 300:
+            advice_list.append(
+                "⚖️ **接近熱量平衡**：體態會維持穩定，適合做身體重組（維持體重同時增肌）。"
+            )
+        else:
+            advice_list.append(
+                "⚠️ **熱量盈餘狀態**：長期下來體重會增加，如果想減脂建議減少高熱量或油炸食物。"
+            )
+
+        if total_day_pro < protein_target:
+            advice_list.append(
+                f"💪 **蛋白質攝取偏低**：建議每日蛋白質目標約為 {protein_target:.1f}g（目前 {total_day_pro:.1f}g），可多補充水煮雞胸肉、蛋或豆漿。"
+            )
+        else:
+            advice_list.append(
+                f"🌟 **蛋白質攝取充足**：做得很好！足夠的蛋白質有助於維持肌肉量與提升飽足感。"
+            )
+
+        for adv in advice_list:
+            st.markdown(f"- {adv}")
