@@ -71,33 +71,54 @@ if "last_feedback" not in st.session_state:
 st.title("🌱 身態模擬器")
 
 
-# ==================== 讀取漸進式 GIF 並取出目前體態畫面 ====================
-BODY_STAGE_FRAME = {0: 0, 1: 15, 2: 30, 3: 45, 4: 60}
+# ==================== 固定體態 PNG + 漸進式 GIF ====================
+# 固定 PNG 負責 BMI 對應人物；GIF 只負責播放體態漸進動畫。
+BODY_IMAGE_FILES = {
+    "女": {
+        0: "female_very_thin.png",
+        1: "female_thin.png",
+        2: "female_normal.png",
+        3: "female_overweight.png",
+        4: "female_obese.png",
+    },
+    "男": {
+        0: "male_very_thin.png",
+        1: "male_thin.png",
+        2: "male_normal.png",
+        3: "male_overweight.png",
+        4: "male_obese.png",
+    },
+}
 
 
 def get_progression_gif_path(gender):
-    filename = "female_body_progression.gif" if gender == "女" else "male_body_progression.gif"
+    filename = (
+        "female_body_progression.gif"
+        if gender == "女"
+        else "male_body_progression.gif"
+    )
+    path = os.path.join("images", filename)
+    return path if os.path.exists(path) else None
+
+
+def get_character_image_path(gender, tier_idx):
+    gender_map = BODY_IMAGE_FILES.get(gender, BODY_IMAGE_FILES["女"])
+    filename = gender_map.get(int(tier_idx), gender_map[2])
     path = os.path.join("images", filename)
     return path if os.path.exists(path) else None
 
 
 @st.cache_data
-
 def get_character_avatar_base64(gender, tier_idx):
-    """從漸進式 GIF 取出對應五階段的靜態畫面；不再需要原本的 PNG。"""
-    gif_path = get_progression_gif_path(gender)
-    if not gif_path:
+    """依 BMI 體態等級直接讀取固定 PNG，不再從 GIF 猜 frame。"""
+    image_path = get_character_image_path(gender, tier_idx)
+    if not image_path:
         return ""
 
     try:
-        img = Image.open(gif_path)
-        frame_index = BODY_STAGE_FRAME.get(int(tier_idx), 30)
-        frame_index = min(frame_index, getattr(img, "n_frames", 1) - 1)
-        img.seek(frame_index)
-        frame = img.convert("RGBA")
-        buffered = io.BytesIO()
-        frame.save(buffered, format="PNG")
-        img_str = base64.b64encode(buffered.getvalue()).decode()
+        with open(image_path, "rb") as f:
+            image_bytes = f.read()
+        img_str = base64.b64encode(image_bytes).decode()
         return f"data:image/png;base64,{img_str}"
     except Exception:
         return ""
@@ -719,7 +740,7 @@ with tab3:
             width=360,
             caption="漸進式體態變化示意：很瘦 → 瘦 → 正常 → 微胖 → 很胖",
         )
-        st.caption("GIF 檔名：female_body_progression.gif / male_body_progression.gif；放在 images 資料夾即可。")
+        st.caption("GIF 只負責播放漸進動畫；主人物與 Before / After 皆由固定 PNG 依 BMI 等級顯示。")
     else:
         st.info(
             "尚未找到漸進式體態 GIF。請將 female_body_progression.gif / "
@@ -732,7 +753,7 @@ with tab3:
 
         projected_remaining = tdee - total_day_cal
 
-        # 舊有 Before/After 邏輯保留，但改成以「連續 sim_days」模型更合理地模擬
+        # Before/After 保留，人物改用固定 PNG 依 BMI 等級直接對應
         simulated_weight = simulated_weight_long
         simulated_bmi = simulated_bmi_long
         simulated_tier, simulated_body_state = get_body_tier(simulated_bmi)
