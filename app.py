@@ -63,7 +63,7 @@ if "last_feedback" not in st.session_state:
 
 st.title("🌱 身態模擬器")
 
-# ==================== 固定體態 PNG + 漸進式 GIF 對應 ====================
+# ==================== 固定體態 PNG 對應 ====================
 BODY_IMAGE_FILES = {
     "女": {
         0: "female_very_thin.png",
@@ -82,16 +82,6 @@ BODY_IMAGE_FILES = {
 }
 
 
-def get_progression_gif_path(gender):
-    filename = (
-        "female_body_progression.gif"
-        if gender == "女"
-        else "male_body_progression.gif"
-    )
-    path = os.path.join("images", filename)
-    return path if os.path.exists(path) else None
-
-
 def get_character_image_path(gender, tier_idx):
     gender_map = BODY_IMAGE_FILES.get(gender, BODY_IMAGE_FILES["女"])
     filename = gender_map.get(int(tier_idx), gender_map[2])
@@ -99,7 +89,6 @@ def get_character_image_path(gender, tier_idx):
     return path if os.path.exists(path) else None
 
 
-# 移除快取裝飾器，確保剛上傳的圖片能即時讀取
 def get_character_avatar_base64(gender, tier_idx):
     image_path = get_character_image_path(gender, tier_idx)
     if not image_path:
@@ -111,10 +100,6 @@ def get_character_avatar_base64(gender, tier_idx):
         return f"data:image/png;base64,{img_str}"
     except Exception:
         return ""
-
-
-def get_body_progression_gif(gender):
-    return get_progression_gif_path(gender)
 
 
 # ==================== 食物資料庫 ====================
@@ -328,10 +313,10 @@ with tab2:
         st.info("目前尚無飲水紀錄。")
 
 
-# 分頁三：今天這樣吃好嗎 (包含點擊後才會連動顯示的 Before/After 與漸進動畫)
+# 分頁三：今天這樣吃好嗎 (包含點擊後顯示的 Before vs After 體態對比)
 with tab3:
     st.subheader("🤖 今天這樣吃好嗎")
-    st.info("💡 選擇三餐，設定模擬天數，點擊下方按鈕即可一鍵連動檢視長期體態轉變！")
+    st.info("💡 選擇三餐，設定模擬天數，點擊下方按鈕即可一鍵檢視長期體態轉變！")
 
     st.markdown("---")
     st.markdown("#### 🍳 早餐")
@@ -376,8 +361,8 @@ with tab3:
     s2.metric(f"{sim_days} 天後估算體重", f"{simulated_weight_long:.1f} kg")
     s3.metric("估算 BMI", f"{simulated_bmi_long:.1f}")
 
-    # 點擊模擬按鈕後，才會連動顯示：Before vs After 圖片與漸進式 GIF 動畫
-    if st.button("🚀 啟動模擬分析與漸進變化", type="primary"):
+    # 點擊模擬按鈕後，顯示 Before vs After 圖片對比卡片
+    if st.button("🚀 啟動模擬分析", type="primary"):
         st.write("---")
         st.markdown(f"### 🛡️ 【{char_name}】的 {sim_days} 天體態轉變模擬")
 
@@ -387,7 +372,6 @@ with tab3:
 
         simulated_avatar_url = get_character_avatar_base64(gender, simulated_tier)
 
-        # 1. 顯示 Before 與 After 對比卡片
         col_img1, col_img2 = st.columns(2)
         with col_img1:
             st.markdown(
@@ -412,26 +396,3 @@ with tab3:
                 """,
                 unsafe_allow_html=True,
             )
-
-        # 2. 顯示漸進式 GIF 動畫 (與模擬結果連動)
-        st.write("")
-        progression_gif = get_body_progression_gif(gender)
-        if progression_gif and os.path.exists(progression_gif):
-            try:
-                with open(progression_gif, "rb") as gif_file:
-                    gif_bytes = gif_file.read()
-                gif_base64 = base64.b64encode(gif_bytes).decode("utf-8")
-                st.markdown(
-                    f"""
-                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; margin-top:20px; background:var(--secondary-background-color); padding:20px; border-radius:16px; border:1px solid rgba(255,75,75,0.3);">
-                        <h4 style="margin-bottom:12px; color:#ff4b4b;">🎬 體態漸進變化過程動畫</h4>
-                        <img src="data:image/gif;base64,{gif_base64}" style="width:340px; max-width:100%; height:auto; object-fit:contain; border-radius:12px;">
-                        <p style="text-align:center; margin-top:12px; font-size:14px; opacity:0.8;">
-                            經由每天 {total_day_cal:.0f} kcal 的累積，見證身材的動態轉變！
-                        </p>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-            except Exception:
-                pass
