@@ -44,13 +44,6 @@ st.markdown(
         margin-top: 12px;
         border: 1px solid rgba(255,75,75,0.35);
     }
-    .sim-card {
-        background: var(--secondary-background-color);
-        border-radius: 16px;
-        padding: 16px;
-        border: 1px solid rgba(52,152,219,0.35);
-        margin-bottom: 12px;
-    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -70,8 +63,7 @@ if "last_feedback" not in st.session_state:
 
 st.title("🌱 身態模擬器")
 
-
-# ==================== 固定體態 PNG + 漸進式 GIF ====================
+# ==================== 固定體態 PNG + 漸進式 GIF 對應 ====================
 BODY_IMAGE_FILES = {
     "女": {
         0: "female_very_thin.png",
@@ -107,13 +99,11 @@ def get_character_image_path(gender, tier_idx):
     return path if os.path.exists(path) else None
 
 
-# 移除快取裝飾器，避免殘留空字串快取
+# 移除快取裝飾器，確保剛上傳的圖片能即時讀取
 def get_character_avatar_base64(gender, tier_idx):
-    """依 BMI 體態等級直接讀取固定 PNG。"""
     image_path = get_character_image_path(gender, tier_idx)
     if not image_path:
         return ""
-
     try:
         with open(image_path, "rb") as f:
             image_bytes = f.read()
@@ -132,47 +122,13 @@ ORIGINAL_FOOD_DB = [
     {"name": "三明治 (Sandwich, 1份)", "cal": 320.0, "pro": 12.0, "carb": 35.0, "fat": 14.0},
     {"name": "蛋餅 (Dan Bing, 1份)", "cal": 300.0, "pro": 10.0, "carb": 35.0, "fat": 12.0},
     {"name": "飯糰 (Taiwanese Rice Ball, 1顆)", "cal": 420.0, "pro": 12.0, "carb": 58.0, "fat": 15.0},
-    {"name": "燒餅油條 (Shaobing & Youtiao, 1份)", "cal": 550.0, "pro": 12.0, "carb": 60.0, "fat": 28.0},
-    {"name": "蔥抓餅 (Scallion Pancake, 1份)", "cal": 380.0, "pro": 8.0, "carb": 48.0, "fat": 17.0},
-    {"name": "蘿蔔糕 (Radish Cake, 2片)", "cal": 210.0, "pro": 4.0, "carb": 32.0, "fat": 7.0},
-    {"name": "荷包蛋 (Fried Egg, 1顆)", "cal": 90.0, "pro": 6.5, "carb": 0.5, "fat": 7.0},
-    {"name": "水煮蛋 (Boiled Egg, 1顆)", "cal": 72.0, "pro": 6.3, "carb": 0.4, "fat": 4.8},
-    {"name": "三杯雞 (Three-Cup Chicken, 1份)", "cal": 480.0, "pro": 32.0, "carb": 8.0, "fat": 35.0},
     {"name": "滷肉飯 (Braised Pork Rice, 1碗)", "cal": 500.0, "pro": 15.0, "carb": 65.0, "fat": 20.0},
     {"name": "雞排 (Fried Chicken Cutlet, 1份)", "cal": 650.0, "pro": 35.0, "carb": 40.0, "fat": 42.0},
     {"name": "牛肉麵 (Beef Noodle Soup, 1碗)", "cal": 600.0, "pro": 28.0, "carb": 70.0, "fat": 22.0},
-    {"name": "小籠包 (Xiao Long Bao, 8顆)", "cal": 520.0, "pro": 24.0, "carb": 48.0, "fat": 26.0},
-    {"name": "陽春麵 (Plain Noodle Soup, 1碗)", "cal": 350.0, "pro": 10.0, "carb": 60.0, "fat": 7.0},
-    {"name": "水餃 (Dumplings, 10顆)", "cal": 550.0, "pro": 22.0, "carb": 65.0, "fat": 22.0},
-    {"name": "排骨飯 (Pork Chop Rice, 1份)", "cal": 750.0, "pro": 30.0, "carb": 85.0, "fat": 32.0},
-    {"name": "雞腿飯 (Chicken Leg Rice, 1份)", "cal": 720.0, "pro": 35.0, "carb": 80.0, "fat": 28.0},
-    {"name": "鍋貼 (Pan-fried Dumplings, 8顆)", "cal": 600.0, "pro": 18.0, "carb": 65.0, "fat": 30.0},
-    {"name": "鹹酥雞 (Salt Crispy Chicken, 1份)", "cal": 550.0, "pro": 25.0, "carb": 30.0, "fat": 35.0},
-    {"name": "蚵仔煎 (Oyster Omelet, 1份)", "cal": 450.0, "pro": 15.0, "carb": 50.0, "fat": 22.0},
-    {"name": "肉圓 (Bawwan, 1顆)", "cal": 400.0, "pro": 12.0, "carb": 55.0, "fat": 15.0},
-    {"name": "臭豆腐 (Stinky Tofu, 1份)", "cal": 420.0, "pro": 16.0, "carb": 30.0, "fat": 26.0},
     {"name": "白米飯 (White Rice, 1碗)", "cal": 280.0, "pro": 5.4, "carb": 61.0, "fat": 0.6},
-    {"name": "糙米飯 (Brown Rice, 1碗)", "cal": 250.0, "pro": 5.5, "carb": 52.0, "fat": 1.8},
     {"name": "水煮雞胸肉 (Chicken Breast, 100g)", "cal": 165.0, "pro": 31.0, "carb": 0.0, "fat": 3.6},
-    {"name": "地瓜 (Sweet Potato, 1條)", "cal": 130.0, "pro": 2.2, "carb": 30.0, "fat": 0.3},
-    {"name": "水煮青菜 (Boiled Veggies, 1盤)", "cal": 60.0, "pro": 2.5, "carb": 10.0, "fat": 1.5},
-    {"name": "沙拉 (Vegetable Salad, 1份)", "cal": 120.0, "pro": 3.0, "carb": 15.0, "fat": 5.0},
-    {"name": "鮭魚排 (Salmon, 120g)", "cal": 250.0, "pro": 24.0, "carb": 0.0, "fat": 16.0},
     {"name": "珍珠奶茶 (Bubble Tea, 700ml/微糖)", "cal": 450.0, "pro": 4.0, "carb": 75.0, "fat": 15.0},
-    {"name": "無糖豆漿 (Soy Milk, 500ml)", "cal": 175.0, "pro": 16.0, "carb": 10.0, "fat": 7.0},
-    {"name": "鮮奶茶 (Milk Tea, 500ml)", "cal": 280.0, "pro": 8.0, "carb": 35.0, "fat": 11.0},
     {"name": "美式咖啡 (Black Coffee, 360ml)", "cal": 15.0, "pro": 1.0, "carb": 2.0, "fat": 0.0},
-    {"name": "拿鐵 (Latte, 360ml)", "cal": 180.0, "pro": 9.0, "carb": 15.0, "fat": 9.0},
-    {"name": "豆花 (Douhua, 1碗)", "cal": 250.0, "pro": 8.0, "carb": 40.0, "fat": 6.0},
-    {"name": "蘋果 (Apple, 1顆)", "cal": 78.0, "pro": 0.4, "carb": 21.0, "fat": 0.3},
-    {"name": "香蕉 (Banana, 1根)", "cal": 105.0, "pro": 1.3, "carb": 27.0, "fat": 0.3},
-    {"name": "芭樂 (Guava, 1顆)", "cal": 120.0, "pro": 2.5, "carb": 26.0, "fat": 1.0},
-    {"name": "奇異果 (Kiwi, 2顆)", "cal": 90.0, "pro": 1.6, "carb": 22.0, "fat": 0.8},
-    {"name": "木瓜 (Papaya, 1片)", "cal": 60.0, "pro": 0.8, "carb": 15.0, "fat": 0.3},
-    {"name": "大麥克漢堡 (Big Mac, 1個)", "cal": 590.0, "pro": 26.0, "carb": 46.0, "fat": 34.0},
-    {"name": "薯條 (French Fries, 中份)", "cal": 380.0, "pro": 4.0, "carb": 48.0, "fat": 19.0},
-    {"name": "披薩 (Pizza, 1片)", "cal": 280.0, "pro": 12.0, "carb": 30.0, "fat": 12.0},
-    {"name": "義大利麵 (Pasta, 1份)", "cal": 520.0, "pro": 18.0, "carb": 70.0, "fat": 18.0},
 ]
 
 
@@ -208,13 +164,8 @@ def search_foods(keyword):
             "pro": 15.0,
             "carb": 45.0,
             "fat": 18.0,
-            "category": "智慧推估",
         }]
     return results[:80]
-
-
-def search_taiwan_food(keyword):
-    return search_foods(keyword)
 
 
 # ==================== 版面配置 ====================
@@ -229,15 +180,13 @@ with col_left:
         age = st.number_input("年齡 (歲)", min_value=1, max_value=120, value=25)
         height = st.number_input("身高 (cm)", min_value=50.0, max_value=230.0, value=150.0)
         target_weight = st.number_input("目標體重 (kg)", min_value=20.0, max_value=250.0, value=45.0)
-        target_weeks = st.number_input(
-            "目標期限 (週)", min_value=1, max_value=520, value=12, step=1
-        )
+        target_weeks = st.number_input("目標期限 (週)", min_value=1, max_value=520, value=12, step=1)
 
     with col_s2:
         gender = st.selectbox("性別", ["女", "男"])
         weight = st.number_input("目前體重 (kg)", min_value=20.0, max_value=250.0, value=50.0)
 
-# 計算 BMR, TDEE, BMI
+# 數值計算
 if gender == "女":
     bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161
 else:
@@ -246,9 +195,6 @@ else:
 tdee = bmr * 1.2
 bmi = weight / ((height / 100) ** 2)
 recommended_water = max(1500, weight * 35 + (height - 150) * 3)
-
-today_cal_sum = sum(item["cal"] for item in st.session_state.history)
-calorie_remaining = tdee - today_cal_sum
 
 
 def get_body_tier(b):
@@ -263,56 +209,6 @@ def get_body_tier(b):
     else:
         return 4, "很胖 (肥胖)"
 
-
-def estimate_goal_plan(current_weight, goal_weight, weeks, daily_tdee, current_bmi):
-    days = max(1, weeks * 7)
-    weight_delta = current_weight - goal_weight
-    required_daily_deficit = (weight_delta * 7700) / days
-
-    safe_demo_deficit = min(max(required_daily_deficit, 0), 500)
-    suggested_daily_intake = max(1200, daily_tdee - safe_demo_deficit)
-
-    if abs(weight_delta) < 0.1:
-        return {
-            "direction": "維持",
-            "required": 0,
-            "suggested": daily_tdee,
-            "rate": 0,
-            "message": "目前體重已接近目標體重，可以把重點放在維持規律飲食、活動量與水分。",
-            "warning": None,
-        }
-
-    if weight_delta > 0:
-        weekly_rate = weight_delta / weeks
-        warning = None
-        if weekly_rate > 1.0:
-            warning = "目前期限需要的減重速度偏快，建議把期限拉長，不要用極端節食方式追趕目標。"
-        return {
-            "direction": "減重",
-            "required": required_daily_deficit,
-            "suggested": suggested_daily_intake,
-            "rate": weekly_rate,
-            "message": (
-                f"預計每週約下降 {weekly_rate:.2f} kg。"
-                f"以目前估算 TDEE 計算, 平均每日攝取約 {suggested_daily_intake:.0f} kcal 可作為展示上的規劃起點。"
-            ),
-            "warning": warning,
-        }
-
-    weekly_rate = abs(weight_delta) / weeks
-    return {
-        "direction": "增重",
-        "required": abs(required_daily_deficit),
-        "suggested": daily_tdee + min(abs(required_daily_deficit), 300),
-        "rate": weekly_rate,
-        "message": f"預計每週約增加 {weekly_rate:.2f} kg。建議以均衡飲食為主。",
-        "warning": None,
-    }
-
-
-goal_plan = estimate_goal_plan(
-    weight, target_weight, int(target_weeks), tdee, bmi
-)
 
 tier_idx, body_state = get_body_tier(bmi)
 current_avatar_url = get_character_avatar_base64(gender, tier_idx)
@@ -333,95 +229,33 @@ with col_right:
         unsafe_allow_html=True,
     )
 
-# 目標體重規劃
-st.write("")
-st.markdown("### 🎯 目標體重規劃")
-goal_col1, goal_col2, goal_col3 = st.columns(3)
-goal_col1.metric("目標體重", f"{target_weight:.1f} kg")
-goal_col2.metric("預計期限", f"{int(target_weeks)} 週")
-goal_col3.metric("每週變化", f"{goal_plan['rate']:.2f} kg")
-
-if goal_plan["direction"] == "減重":
-    st.info(
-        f"💡 目標差距：{weight - target_weight:.1f} kg｜"
-        f"展示用每日熱量規劃：約 {goal_plan['suggested']:.0f} kcal"
-    )
-elif goal_plan["direction"] == "增重":
-    st.info(
-        f"💡 目標差距：{target_weight - weight:.1f} kg｜"
-        f"展示用每日熱量規劃：約 {goal_plan['suggested']:.0f} kcal"
-    )
-else:
-    st.success("✨ 目前體重已接近目標，可以把重點放在維持。")
-
-st.markdown(
-    f"""
-    <div class="goal-card">
-        <strong>💬 減肥建議</strong><br>
-        {goal_plan["message"]}
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
-if goal_plan["warning"]:
-    st.warning(f"⚠️ {goal_plan['warning']}")
-
-# 數據小卡列
-st.write("")
-col_m1, col_m2, col_m3, col_m4 = st.columns(4)
-col_m1.metric("基礎代謝 (BMR)", f"{bmr:.0f} kcal")
-col_m2.metric("每日消耗 (TDEE)", f"{tdee:.0f} kcal")
-col_m3.metric("目前 BMI", f"{bmi:.1f}")
-col_m4.metric("今日剩餘熱量", f"{calorie_remaining:.0f} kcal")
-
-st.info(f"💬 {st.session_state.last_feedback}")
 st.divider()
 
 # 分頁架構
-tab1, tab2, tab3 = st.tabs(
-    ["🍱 三餐紀錄", "💧 水分與日常追蹤", "🤖 今天這樣吃好嗎"]
-)
+tab1, tab2, tab3 = st.tabs(["🍱 三餐紀錄", "💧 水分與日常追蹤", "🤖 今天這樣吃好嗎"])
 
 
 def render_food_selector_section(unique_key_prefix):
-    st.markdown("#### 關鍵字搜尋")
-    st.caption(f"🍱 食物資料庫：{len(TAIWAN_FOOD_DB):,} 筆")
-    search_keyword = st.text_input(
-        "輸入關鍵字", "", key=f"{unique_key_prefix}_kw"
-    )
-
-    matched_foods = search_taiwan_food(search_keyword)
+    search_keyword = st.text_input("輸入關鍵字搜尋", "", key=f"{unique_key_prefix}_kw")
+    matched_foods = search_foods(search_keyword)
     options = [f["name"] for f in matched_foods]
     options.append("✏️ 自訂食物與營養素 (手動輸入)")
 
     sel_key = f"{unique_key_prefix}_sel"
     prev_sel_key = f"{unique_key_prefix}_prev_sel"
 
-    selected_option = st.selectbox(
-        "選擇搜尋結果", options, key=sel_key
-    )
+    selected_option = st.selectbox("選擇搜尋結果", options, key=sel_key)
 
     if selected_option == "✏️ 自訂食物與營養素 (手動輸入)":
-        f_name = "自訂健康餐點"
-        default_cal, default_pro, default_carb, default_fat = (
-            350.0, 15.0, 40.0, 12.0
-        )
+        default_cal, default_pro, default_carb, default_fat = 350.0, 15.0, 40.0, 12.0
     else:
-        matched_item = next(
-            (f for f in matched_foods if f["name"] == selected_option),
-            matched_foods[0] if matched_foods else {"name": "自訂", "cal": 350.0, "pro": 15.0, "carb": 40.0, "fat": 12.0}
-        )
-        f_name = matched_item["name"]
+        matched_item = next((f for f in matched_foods if f["name"] == selected_option), matched_foods[0])
         default_cal = matched_item["cal"]
         default_pro = matched_item["pro"]
         default_carb = matched_item["carb"]
         default_fat = matched_item["fat"]
 
-    if (
-        prev_sel_key not in st.session_state
-        or st.session_state[prev_sel_key] != selected_option
-    ):
+    if prev_sel_key not in st.session_state or st.session_state[prev_sel_key] != selected_option:
         st.session_state[f"{unique_key_prefix}_fcal"] = float(default_cal)
         st.session_state[f"{unique_key_prefix}_fpro"] = float(default_pro)
         st.session_state[f"{unique_key_prefix}_fcarb"] = float(default_carb)
@@ -435,19 +269,14 @@ def render_food_selector_section(unique_key_prefix):
     f_carb = c3.number_input("碳水 (g)", key=f"{unique_key_prefix}_fcarb", min_value=0.0)
     f_fat = c4.number_input("脂肪 (g)", key=f"{unique_key_prefix}_ffat", min_value=0.0)
 
-    return f_name, f_cal, f_pro, f_carb, f_fat
+    return selected_option, f_cal, f_pro, f_carb, f_fat
 
 
 # 分頁一：三餐紀錄
 with tab1:
     st.subheader("📝 三餐與營養素記錄")
-    meal_category = st.selectbox(
-        "選擇餐別", ["早餐", "午餐", "晚餐", "宵夜"]
-    )
-
-    food_name, food_cal, food_pro, food_carb, food_fat = (
-        render_food_selector_section("tab1")
-    )
+    meal_category = st.selectbox("選擇餐別", ["早餐", "午餐", "晚餐", "宵夜"])
+    food_name, food_cal, food_pro, food_carb, food_fat = render_food_selector_section("tab1")
 
     if st.button("➕ 確認新增紀錄", type="primary"):
         st.session_state.history.append({
@@ -464,40 +293,25 @@ with tab1:
 
     if st.session_state.history:
         st.write("### 📋 今日飲食清單")
-        st.dataframe(
-            pd.DataFrame(st.session_state.history),
-            use_container_width=True,
-        )
+        st.dataframe(pd.DataFrame(st.session_state.history), use_container_width=True)
 
 
 # 分頁二：水分與日常追蹤
 with tab2:
     st.subheader("💧 每日水分攝取量追蹤")
     st.info(f"💡 每日建議飲水量為：**{recommended_water:.0f} c.c.**")
-
     st.write(f"目前已補充水分：**{st.session_state.water} c.c.** / 目標 **{recommended_water:.0f} c.c.**")
 
     col_w1, col_w2, col_w3 = st.columns(3)
-
     if col_w1.button("💧 喝一杯水 (+250 c.c.)"):
         st.session_state.water += 250
-        st.session_state.water_history.append({
-            "date": str(datetime.date.today()),
-            "action": "喝一杯水",
-            "amount": "250 c.c.",
-            "total_water": f"{st.session_state.water} c.c.",
-        })
+        st.session_state.water_history.append({"date": str(datetime.date.today()), "action": "喝一杯水", "amount": "250 c.c.", "total_water": f"{st.session_state.water} c.c."})
         st.success("成功記錄 250 c.c. 水分！")
         st.rerun()
 
     if col_w2.button("🚰 大口灌水 (+500 c.c.)"):
         st.session_state.water += 500
-        st.session_state.water_history.append({
-            "date": str(datetime.date.today()),
-            "action": "大口灌水",
-            "amount": "500 c.c.",
-            "total_water": f"{st.session_state.water} c.c.",
-        })
+        st.session_state.water_history.append({"date": str(datetime.date.today()), "action": "大口灌水", "amount": "500 c.c.", "total_water": f"{st.session_state.water} c.c."})
         st.success("成功記錄 500 c.c. 水分！")
         st.rerun()
 
@@ -509,29 +323,26 @@ with tab2:
 
     st.write("### 📋 飲水紀錄")
     if st.session_state.water_history:
-        st.dataframe(
-            pd.DataFrame(st.session_state.water_history),
-            use_container_width=True,
-        )
+        st.dataframe(pd.DataFrame(st.session_state.water_history), use_container_width=True)
     else:
         st.info("目前尚無飲水紀錄。")
 
 
-# 分頁三：今天這樣吃好嗎
+# 分頁三：今天這樣吃好嗎 (包含點擊後才會連動顯示的 Before/After 與漸進動畫)
 with tab3:
     st.subheader("🤖 今天這樣吃好嗎")
-    st.info("💡 選擇三餐，模擬長期維持此飲食的體態變化。")
+    st.info("💡 選擇三餐，設定模擬天數，點擊下方按鈕即可一鍵連動檢視長期體態轉變！")
 
     st.markdown("---")
-    st.markdown("#### 🍳 早餐：吃了甚麼")
+    st.markdown("#### 🍳 早餐")
     bf_name, bf_cal, bf_pro, bf_carb, bf_fat = render_food_selector_section("tab4_breakfast")
 
     st.markdown("---")
-    st.markdown("#### 🍱 午餐：吃了甚麼")
+    st.markdown("#### 🍱 午餐")
     lu_name, lu_cal, lu_pro, lu_carb, lu_fat = render_food_selector_section("tab4_lunch")
 
     st.markdown("---")
-    st.markdown("#### 🍲 晚餐：吃了甚麼")
+    st.markdown("#### 🍲 晚餐")
     di_name, di_cal, di_pro, di_carb, di_fat = render_food_selector_section("tab4_dinner")
 
     total_day_cal = bf_cal + lu_cal + di_cal
@@ -540,18 +351,15 @@ with tab3:
     total_day_fat = bf_fat + lu_fat + di_fat
 
     st.markdown("---")
-    st.markdown("#### 📊 全天總計欄位")
+    st.markdown("#### 📊 全天總計與模擬設定")
     c_t1, c_t2, c_t3, c_t4 = st.columns(4)
     c_t1.metric("總熱量", f"{total_day_cal:.0f} kcal")
     c_t2.metric("總蛋白質", f"{total_day_pro:.1f} g")
     c_t3.metric("總碳水", f"{total_day_carb:.1f} g")
     c_t4.metric("總脂肪", f"{total_day_fat:.1f} g")
 
-    st.markdown("---")
-    st.markdown("#### 🔮 熱量累積與體態變化模擬")
-
     sim_days = st.slider(
-        "如果連續維持今天的飲食量，想看看未來多久的變化？",
+        "如果連續維持此飲食，想模擬未來幾天的變化？",
         min_value=7,
         max_value=180,
         value=30,
@@ -568,48 +376,24 @@ with tab3:
     s2.metric(f"{sim_days} 天後估算體重", f"{simulated_weight_long:.1f} kg")
     s3.metric("估算 BMI", f"{simulated_bmi_long:.1f}")
 
-    # 漸進式 GIF 顯示
-    progression_gif = get_body_progression_gif(gender)
-    if progression_gif and os.path.exists(progression_gif):
-        try:
-            with open(progression_gif, "rb") as gif_file:
-                gif_bytes = gif_file.read()
-            gif_base64 = base64.b64encode(gif_bytes).decode("utf-8")
-            st.markdown(
-                f"""
-                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%;">
-                    <img src="data:image/gif;base64,{gif_base64}" style="width:360px; max-width:100%; height:auto; object-fit:contain; border-radius:16px;">
-                    <p style="text-align:center; margin-top:10px; font-size:14px; opacity:0.8;">漸進式體態變化示意</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-        except Exception:
-            pass
-
-    if st.button("🚀 啟動模擬分析與建議", type="primary"):
+    # 點擊模擬按鈕後，才會連動顯示：Before vs After 圖片與漸進式 GIF 動畫
+    if st.button("🚀 啟動模擬分析與漸進變化", type="primary"):
         st.write("---")
-        st.markdown(f"### 🛡️ 【{char_name}】的 模擬分析")
+        st.markdown(f"### 🛡️ 【{char_name}】的 {sim_days} 天體態轉變模擬")
 
-        simulated_weight = simulated_weight_long
-        simulated_bmi = simulated_bmi_long
-        simulated_tier, simulated_body_state = get_body_tier(simulated_bmi)
-
-        if total_day_cal - tdee < 0:
-            pass
-        else:
+        simulated_tier, simulated_body_state = get_body_tier(simulated_bmi_long)
+        if total_day_cal - tdee > 0:
             simulated_body_state += " (⚠️ 熱量超載警戒)"
 
         simulated_avatar_url = get_character_avatar_base64(gender, simulated_tier)
 
-        st.markdown("#### Before vs After")
+        # 1. 顯示 Before 與 After 對比卡片
         col_img1, col_img2 = st.columns(2)
-
         with col_img1:
             st.markdown(
                 f"""
                 <div style="background:var(--secondary-background-color); padding:15px; border-radius:12px; text-align:center; border:2px solid #3498db;">
-                    <p style="font-weight:bold; font-size:15px; margin-bottom:8px;">Before</p>
+                    <p style="font-weight:bold; font-size:16px; margin-bottom:8px;">Before (目前)</p>
                     <img src="{current_avatar_url}" width="200" style="object-fit:contain; height:220px; margin-bottom:8px;">
                     <p style="margin:0; font-size:14px; font-weight:bold;">{body_state}</p>
                 </div>
@@ -621,10 +405,33 @@ with tab3:
             st.markdown(
                 f"""
                 <div style="background:var(--secondary-background-color); padding:15px; border-radius:12px; text-align:center; border:2px solid #e74c3c;">
-                    <p style="font-weight:bold; font-size:15px; margin-update:8px;">After</p>
+                    <p style="font-weight:bold; font-size:16px; margin-bottom:8px;">After ({sim_days} 天後)</p>
                     <img src="{simulated_avatar_url}" width="200" style="object-fit:contain; height:220px; margin-bottom:8px;">
                     <p style="margin:0; font-size:14px; font-weight:bold;">{simulated_body_state}</p>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
+
+        # 2. 顯示漸進式 GIF 動畫 (與模擬結果連動)
+        st.write("")
+        progression_gif = get_body_progression_gif(gender)
+        if progression_gif and os.path.exists(progression_gif):
+            try:
+                with open(progression_gif, "rb") as gif_file:
+                    gif_bytes = gif_file.read()
+                gif_base64 = base64.b64encode(gif_bytes).decode("utf-8")
+                st.markdown(
+                    f"""
+                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; margin-top:20px; background:var(--secondary-background-color); padding:20px; border-radius:16px; border:1px solid rgba(255,75,75,0.3);">
+                        <h4 style="margin-bottom:12px; color:#ff4b4b;">🎬 體態漸進變化過程動畫</h4>
+                        <img src="data:image/gif;base64,{gif_base64}" style="width:340px; max-width:100%; height:auto; object-fit:contain; border-radius:12px;">
+                        <p style="text-align:center; margin-top:12px; font-size:14px; opacity:0.8;">
+                            經由每天 {total_day_cal:.0f} kcal 的累積，見證身材的動態轉變！
+                        </p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+            except Exception:
+                pass
