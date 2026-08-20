@@ -154,7 +154,7 @@ def search_foods(keyword):
 
 
 # ==================== 版面配置 ====================
-col_left, col_right = st.columns([1.2, 1])
+col_left, col_right = st.columns([1.3, 1])
 
 with col_left:
     st.markdown("### 📋 基本資料")
@@ -171,15 +171,51 @@ with col_left:
         gender = st.selectbox("性別", ["女", "男"])
         weight = st.number_input("目前體重 (kg)", min_value=20.0, max_value=250.0, value=50.0)
 
-# 數值計算
-if gender == "女":
-    bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161
-else:
-    bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5
+    # 基礎生理數據計算
+    if gender == "女":
+        bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161
+    else:
+        bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5
 
-tdee = bmr * 1.2
-bmi = weight / ((height / 100) ** 2)
-recommended_water = max(1500, weight * 35 + (height - 150) * 3)
+    tdee = bmr * 1.2
+    bmi = weight / ((height / 100) ** 2)
+    recommended_water = max(1500, weight * 35 + (height - 150) * 3)
+
+    # 目標赤字與熱量計算
+    weight_diff = weight - target_weight
+    total_days = target_weeks * 7
+    daily_target_deficit = (weight_diff * 7700) / total_days if total_days > 0 else 0
+    target_daily_cal = tdee - daily_target_deficit
+
+    # 今日紀錄總熱量與目前收支對比
+    today_intake = sum(item["cal"] for item in st.session_state.history)
+    current_balance = today_intake - tdee
+
+    st.markdown("---")
+    st.markdown("#### 📊 每日熱量追蹤與目標設定")
+    
+    m1, m2, m3 = st.columns(3)
+    m1.metric("基礎代謝 (BMR)", f"{int(bmr)} kcal")
+    m2.metric("每日總消耗 (TDEE)", f"{int(tdee)} kcal")
+    m3.metric("今日已攝取熱量", f"{int(today_intake)} kcal")
+
+    m4, m5, m6 = st.columns(3)
+    if weight_diff > 0:
+        m4.metric("建議每日需減少", f"{int(daily_target_deficit)} kcal")
+        m5.metric("目標每日攝取上限", f"{int(target_daily_cal)} kcal")
+    elif weight_diff < 0:
+        m4.metric("建議每日需增加", f"{int(-daily_target_deficit)} kcal")
+        m5.metric("目標每日攝取目標", f"{int(target_daily_cal)} kcal")
+    else:
+        m4.metric("建議每日變化", "0 kcal")
+        m5.metric("目標每日攝取目標", f"{int(tdee)} kcal")
+
+    m6.metric(
+        "今日熱量差 (攝取-消耗)",
+        f"{int(current_balance):+} kcal",
+        delta=f"赤字 {int(-current_balance)} kcal" if current_balance < 0 else f"盈餘 {int(current_balance)} kcal",
+        delta_color="normal" if current_balance <= 0 else "inverse"
+    )
 
 
 def get_body_tier(b):
@@ -313,7 +349,7 @@ with tab2:
         st.info("目前尚無飲水紀錄。")
 
 
-# 分頁三：今天這樣吃好嗎 (包含模擬分析、Before vs After 圖片與營養素分析建議)
+# 分頁三：今天這樣吃好嗎
 with tab3:
     st.subheader("🤖 今天這樣吃好嗎")
     st.info("💡 選擇三餐，設定模擬天數，點擊下方按鈕即可一鍵檢視長期體態轉變與營養素分析！")
@@ -361,7 +397,6 @@ with tab3:
     s2.metric(f"{sim_days} 天後估算體重", f"{simulated_weight_long:.1f} kg")
     s3.metric("估算 BMI", f"{simulated_bmi_long:.1f}")
 
-    # 點擊模擬按鈕後，顯示 Before vs After 圖片對比卡片 與 營養素分析建議
     if st.button("🚀 啟動模擬分析", type="primary"):
         st.write("---")
         st.markdown(f"### 🛡️ 【{char_name}】的 {sim_days} 天體態轉變模擬")
@@ -397,7 +432,6 @@ with tab3:
                 unsafe_allow_html=True,
             )
 
-        # 營養素分析與飲食建議區塊
         st.markdown("---")
         st.markdown("### 💡 營養素分析與飲食建議")
 
